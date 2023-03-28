@@ -1,4 +1,4 @@
-import { getMessages } from "@chatapp/core/src/database";
+import { getMessages } from "@chatapp/core/database";
 
 export async function main(event) {
 	const chat_id = event.pathParameters.chatId;

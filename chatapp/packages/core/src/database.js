@@ -22,38 +22,40 @@ export async function getChats() {
 	return res.rows;
 }
 
-export async function createChat(name) {
+export async function createChat(name, userId, username) {
 	const res = await getPool().query(
 		`
-  INSERT INTO chats (name)
-  VALUES ($1)
+  INSERT INTO chats (name, user_id, username)
+  VALUES ($1, $2, $3)
   RETURNING *
   `,
-		[name]
+		[name, userId, username]
 	);
 	return res.rows[0];
 }
 
-export async function updateChat(id, name) {
+export async function updateChat(id, name, userId) {
 	const res = await getPool().query(
 		`
   UPDATE chats
   SET name = $2
   WHERE id = $1
+  AND user_id = $3
   RETURNING *
   `,
-		[id, name]
+		[id, name, userId]
 	);
 	return res.rows[0];
 }
-export async function deleteChat(id) {
+export async function deleteChat(id, userId) {
 	const res = await getPool().query(
 		`
   DELETE FROM chats
   WHERE id = $1
+  AND user_id = $2
   RETURNING *
   `,
-		[id]
+		[id, userId]
 	);
 	return res.rows[0];
 }
@@ -70,39 +72,41 @@ export async function getMessages(chat_id) {
 	return res.rows;
 }
 
-export async function createMessage(chat_id, content) {
+export async function createMessage(chat_id, userId, username, content) {
 	const res = await getPool().query(
 		`
-		INSERT INTO messages (chat_id, content)
-		VALUES ($1, $2)
+		INSERT INTO messages (chat_id, user_id, username, content)
+		VALUES ($1, $2, $3, $4)
 		RETURNING *
 		`,
-		[chat_id, content]
+		[chat_id, userId, username, content]
 	);
 	return res.rows[0];
 }
 
-export async function updateMessage(message_id, content) {
+export async function updateMessage(message_id, content, userId) {
 	const res = await getPool().query(
 		`
 		UPDATE messages
 		SET content = $2
 		WHERE id = $1
+		AND user_id = $3
 		RETURNING *
 		`,
-		[message_id, content]
+		[message_id, content, userId]
 	);
 	return res.rows[0];
 }
 
-export async function deleteMessage(id) {
+export async function deleteMessage(id, userId) {
 	const res = await getPool().query(
 		`
   DELETE FROM messages
   WHERE id = $1
+  AND user_id = $2
   RETURNING *
   `,
-		[id]
+		[id, userId]
 	);
 	return res.rows[0];
 }

@@ -1,4 +1,4 @@
-import { getChats } from "@chatapp/core/src/database";
+import { getChats } from "@chatapp/core/database";
 
 export async function main(event) {
 	const chats = await getChats();

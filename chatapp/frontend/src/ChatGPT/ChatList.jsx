@@ -2,22 +2,37 @@ import React, { useState, useEffect } from "react";
 import ChatItem from "./ChatItem";
 import NewChatButton from "./NewChatButton";
 import axios from "axios";
+import { Auth, API } from "aws-amplify";
+import { useAuthenticator } from "@aws-amplify/ui-react";
 
 const ChatList = ({ onSelect, selectedChat }) => {
 	const [chats, setChats] = useState([]);
+	const { user, signOut } = useAuthenticator((context) => [context.user]);
 
 	useEffect(() => {
 		// fetch the chats
 		const apiURL = import.meta.env.VITE_API_URL;
-		axios.get(apiURL + "/chats").then((res) => {
-			setChats(res.data.chats);
-		});
+
+		API.get("api", "/chats")
+			.then((res) => {
+				setChats(res.chats);
+			})
+			.catch((err) => {
+				console.log(error);
+			});
 	}, []);
 
 	const updateChat = async (id, newName) => {
 		// update the chat
-		const apiURL = import.meta.env.VITE_API_URL;
-		const result = await axios.put(`${apiURL}/chats/${id}`, { name: newName });
+		await API.put("api", `/chats/${id}`, {
+			body: { name: newName },
+			headers: {
+				Authorization: `Bearer ${(await Auth.currentSession())
+					.getAccessToken()
+					.getJwtToken()}`,
+			},
+		});
+
 		const updatedChats = chats.map((chat) =>
 			chat.id === id ? { ...chat, name: newName } : chat
 		);
@@ -25,21 +40,35 @@ const ChatList = ({ onSelect, selectedChat }) => {
 	};
 
 	const deleteChat = async (id) => {
-		const apiURL = import.meta.env.VITE_API_URL;
-		await axios.delete(`${apiURL}/chats/${id}`);
+		await API.del("api", `/chats/${id}`, {
+			headers: {
+				Authorization: `Bearer ${(await Auth.currentSession())
+					.getAccessToken()
+					.getJwtToken()}`,
+			},
+		});
 
 		const updatedChats = chats.filter((chat) => chat.id !== id);
 		setChats(updatedChats);
 	};
 
 	const createChat = async (name) => {
-		// create the chat
-		const apiURL = import.meta.env.VITE_API_URL;
-		console.log("apiURL: ", apiURL);
-		const result = await axios.post(`${apiURL}/chats`, { name: name });
-		const newChat = result.data.chat;
+		try {
+			const result = await API.post("api", "/chats", {
+				body: { name: name },
+				headers: {
+					Authorization: `Bearer ${(await Auth.currentSession())
+						.getAccessToken()
+						.getJwtToken()}`,
+				},
+			});
 
-		setChats([...chats, newChat]);
+			const newChat = result.chat;
+			setChats([...chats, newChat]);
+		} catch (error) {
+			alert("Error");
+			console.log(error);
+		}
 	};
 
 	return (

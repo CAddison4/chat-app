@@ -1,4 +1,4 @@
-import { deleteMessage } from "@chatapp/core/src/database";
+import { deleteMessage } from "@chatapp/core/database";
 
 export async function main(event) {
 	const id = event.pathParameters.messageId;

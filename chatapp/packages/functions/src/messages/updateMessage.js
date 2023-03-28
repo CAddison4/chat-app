@@ -1,4 +1,4 @@
-import { updateMessage } from "@chatapp/core/src/database";
+import { updateMessage } from "@chatapp/core/database";
 
 export async function main(event) {
 	const content = JSON.parse(event.body).content;

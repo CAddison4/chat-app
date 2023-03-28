@@ -1,8 +1,8 @@
-import { StaticSite, use } from "sst/constructs";
+import { StaticSite, Api, Auth, use } from "sst/constructs";
 import { API } from "./ApiStack";
 
 export function FrontendStack({ stack, app }) {
-	const { api } = use(API);
+	const { api, auth } = use(API);
 
 	const site = new StaticSite(stack, "ReactSite", {
 		path: "frontend",
@@ -10,7 +10,11 @@ export function FrontendStack({ stack, app }) {
 		buildCommand: "yarn build",
 		// Pass in our environment variables
 		environment: {
-			VITE_API_URL: api.customDomainUrl || api.url,
+			VITE_APP_API_URL: api.url,
+			VITE_APP_REGION: app.region,
+			VITE_APP_USER_POOL_ID: auth.userPoolId,
+			VITE_APP_USER_POOL_CLIENT_ID: auth.userPoolClientId,
+			VITE_APP_IDENTITY_POOL_ID: auth.cognitoIdentityPoolId ?? "",
 		},
 	});
 
