@@ -26,11 +26,6 @@ const ChatList = ({ onSelect, selectedChat }) => {
 		// update the chat
 		await API.put("api", `/chats/${id}`, {
 			body: { name: newName },
-			headers: {
-				Authorization: `Bearer ${(await Auth.currentSession())
-					.getAccessToken()
-					.getJwtToken()}`,
-			},
 		});
 
 		const updatedChats = chats.map((chat) =>
@@ -40,13 +35,7 @@ const ChatList = ({ onSelect, selectedChat }) => {
 	};
 
 	const deleteChat = async (id) => {
-		await API.del("api", `/chats/${id}`, {
-			headers: {
-				Authorization: `Bearer ${(await Auth.currentSession())
-					.getAccessToken()
-					.getJwtToken()}`,
-			},
-		});
+		await API.del("api", `/chats/${id}`);
 
 		const updatedChats = chats.filter((chat) => chat.id !== id);
 		setChats(updatedChats);
@@ -56,14 +45,11 @@ const ChatList = ({ onSelect, selectedChat }) => {
 		try {
 			const result = await API.post("api", "/chats", {
 				body: { name: name },
-				headers: {
-					Authorization: `Bearer ${(await Auth.currentSession())
-						.getAccessToken()
-						.getJwtToken()}`,
-				},
 			});
 
 			const newChat = result.chat;
+			const userId = result.identityPoolUserId;
+			console.log("Result", result.identityPoolUserId);
 			setChats([...chats, newChat]);
 		} catch (error) {
 			alert("Error");

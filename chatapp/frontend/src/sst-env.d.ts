@@ -5,6 +5,7 @@ interface ImportMetaEnv {
   readonly VITE_APP_USER_POOL_ID: string
   readonly VITE_APP_USER_POOL_CLIENT_ID: string
   readonly VITE_APP_IDENTITY_POOL_ID: string
+  readonly VITE_APP_S3_BUCKET_NAME: string
 }
 interface ImportMeta {
   readonly env: ImportMetaEnv

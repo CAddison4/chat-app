@@ -72,14 +72,20 @@ export async function getMessages(chat_id) {
 	return res.rows;
 }
 
-export async function createMessage(chat_id, userId, username, content) {
+export async function createMessage(
+	chat_id,
+	userId,
+	username,
+	content,
+	content_type
+) {
 	const res = await getPool().query(
 		`
-		INSERT INTO messages (chat_id, user_id, username, content)
-		VALUES ($1, $2, $3, $4)
+		INSERT INTO messages (chat_id, user_id, username, content, content_type)
+		VALUES ($1, $2, $3, $4, $5)
 		RETURNING *
 		`,
-		[chat_id, userId, username, content]
+		[chat_id, userId, username, content, content_type]
 	);
 	return res.rows[0];
 }

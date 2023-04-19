@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import Message from "./MessageItem";
 import axios from "axios";
-import { Auth, API } from "aws-amplify";
+import { Auth, API, Storage } from "aws-amplify";
 import { useAuthenticator } from "@aws-amplify/ui-react";
 
 const ChatWindow = ({ chat }) => {
@@ -9,63 +9,90 @@ const ChatWindow = ({ chat }) => {
 	const [messages, setMessages] = useState([]);
 	const [input, setInput] = useState("");
 	const { user, signOut } = useAuthenticator((context) => [context.user]);
+	const [file, setFile] = useState(null);
 
 	const chatId = chat.id;
 
+	async function getMessages() {
+		try {
+			const response = await API.get("api", `/chats/${chatId}/messages`);
+			const messages = response.messages;
+			for (let message of messages) {
+				if (message.content_type === "image") {
+					// get a signed url
+					const key = message.content;
+					message.content = await Storage.get(key, {
+						identityId: message.user_id,
+					});
+					message.key = key; // store the original key or file name in the message object
+				}
+			}
+			setMessages(messages);
+		} catch (error) {
+			console.log("Error fetching messages: ", error);
+		}
+	}
 	useEffect(() => {
-		const fetchMessages = async () => {
-			// fetch the messages for each chat if authorized using API.get
-
-			API.get("api", `/chats/${chatId}/messages`, {
-				headers: {
-					Authorization: `Bearer ${(await Auth.currentSession())
-						.getAccessToken()
-						.getJwtToken()}`,
-				},
-			})
-				.then((res) => {
-					setMessages(res.messages);
-				})
-				.catch((err) => {
-					console.log(error);
-				});
-		};
-		fetchMessages();
+		getMessages();
 	}, [chat]);
+
+	const handleFileChange = (event) => {
+		setFile(event.target.files[0]);
+	};
 
 	const handleSend = async () => {
 		// Implement sending the message here
+		if (file) {
+			try {
+				const s3Options = {
+					contentType: file.type,
+					progressCallback(progress) {
+						console.log(`Uploaded: ${progress.loaded / progress.total}`);
+					},
+				};
+				const uniqueFileName = `${Date.now()}-${file.name}`;
+				await Storage.put(uniqueFileName, file, s3Options);
+				console.log("File uploaded successfully!");
+				const result = await API.post("api", `/chats/${chatId}/messages`, {
+					body: {
+						content: uniqueFileName,
+						content_type: "image",
+						username: user.username,
+					},
+				});
 
-		API.post("api", `/chats/${chatId}/messages`, {
-			body: { content: input, chat_id: chatId },
-			headers: {
-				Authorization: `Bearer ${(await Auth.currentSession())
-					.getAccessToken()
-					.getJwtToken()}`,
-			},
-		})
+				const key = result.message.content;
+				result.message.content = await Storage.get(key, {
+					identityId: result.message.user_id,
+				});
+				result.message.key = key;
 
-			.then((res) => {
-				console.log("res: ", res);
-				const newMessage = res.message;
-				setMessages([...messages, newMessage]);
-			})
-			.catch((err) => {
-				console.log(err);
-			});
-
-		setInput("");
+				setMessages([...messages, result.message]);
+				setFile("");
+			} catch (error) {
+				console.log("Error uploading file:", error);
+			}
+		} else {
+			try {
+				const result = await API.post("api", `/chats/${chatId}/messages`, {
+					body: {
+						content: input,
+						content_type: "text",
+						username: user.username,
+					},
+				});
+				setInput("");
+				setMessages([...messages, result.message]);
+			} catch (error) {
+				console.log("Error uploading message:", error);
+			}
+		}
 	};
 
 	const handleMessageUpdate = async (id, content) => {
 		// Implement updating the message here
 		API.put("api", `/chats/${chatId}/messages/${id}`, {
 			body: { content: content },
-			headers: {
-				Authorization: `Bearer ${(await Auth.currentSession())
-					.getAccessToken()
-					.getJwtToken()}`,
-			},
 		})
 			.then((res) => {
 				console.log("res: ", res);
@@ -77,42 +104,29 @@ const ChatWindow = ({ chat }) => {
 			.catch((err) => {
 				console.log(err);
 			});
-
-		const updatedMessages = messages.map((message) =>
-			message.id === id ? { ...message, content: content } : message
-		);
-		setMessages(updatedMessages);
 	};
 
-	const handleMessageDelete = async (id) => {
-		API.del("api", `/chats/${chatId}/messages/${id}`, {
-			headers: {
-				Authorization: `Bearer ${(await Auth.currentSession())
-					.getAccessToken()
-					.getJwtToken()}`,
-			},
-		})
+	const handleMessageDelete = async (message) => {
+		console.log("message: ", message);
+		Storage.remove(message.key);
+		API.del("api", `/chats/${chatId}/messages/${message.id}`)
 			.then((res) => {
 				console.log("res: ", res);
-				const updatedMessages = messages.filter((message) => message.id !== id);
+				const updatedMessages = messages.filter((m) => m.id !== message.id);
 				setMessages(updatedMessages);
 			})
 			.catch((err) => {
 				console.log(err);
 			});
-
-		// Implement deleting the message here
-		// const apiURL = import.meta.env.VITE_API_URL;
-		// await axios.delete(`${apiURL}/chats/${chatId}/messages/${id}`);
-		const updatedMessages = messages.filter((message) => message.id !== id);
+		const updatedMessages = messages.filter((m) => m.id !== message.id);
 		setMessages(updatedMessages);
 
-		// console.log(id);
 	};
 
 	return (
 		<div className="flex flex-col h-full">
 			<div className="flex-grow overflow-y-auto">
+				{console.log("user: ", user)}
 				{user ? (
 					messages.map((message) => (
 						<Message
@@ -129,6 +143,7 @@ const ChatWindow = ({ chat }) => {
 			<div className="flex mt-4">
 				{user && (
 					<>
+						<input type="file" onChange={handleFileChange} />
 						<input
 							type="text"
 							value={input}

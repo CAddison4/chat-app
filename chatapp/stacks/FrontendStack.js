@@ -1,10 +1,19 @@
 import { StaticSite, Api, Auth, use } from "sst/constructs";
 import { API } from "./ApiStack";
+import { MediaAssets } from "./MediaAssets";
 
 export function FrontendStack({ stack, app }) {
 	const { api, auth } = use(API);
+	const { bucket } = use(MediaAssets);
 
+	// const site = new StaticSite(stack, "ReactSite", {
+	// 	customDomain: app.stage != "prod" ? undefined : {
+	// 	  domainName: "chat.sammeechward.com",
+	// 	  hostedZone: "sammeechward.com",
+	// 	},
 	const site = new StaticSite(stack, "ReactSite", {
+		//add domain stuff here
+
 		path: "frontend",
 		buildOutput: "dist",
 		buildCommand: "yarn build",
@@ -15,6 +24,7 @@ export function FrontendStack({ stack, app }) {
 			VITE_APP_USER_POOL_ID: auth.userPoolId,
 			VITE_APP_USER_POOL_CLIENT_ID: auth.userPoolClientId,
 			VITE_APP_IDENTITY_POOL_ID: auth.cognitoIdentityPoolId ?? "",
+			VITE_APP_S3_BUCKET_NAME: bucket.bucketName,
 		},
 	});
 

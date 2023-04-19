@@ -6,21 +6,24 @@
 --     timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW()
 -- );
 DROP TABLE if exists messages;
-DROP TABLE if exists chats;
+drop table if exists chats;
 
 CREATE TABLE chats (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL, 
-    username TEXT NOT NULL,
     name TEXT NOT NULL,
-    timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    user_id TEXT NOT NULL,
+    username TEXT NOT NULL,
+    INDEX user_id_index (user_id)
 );
 
 CREATE TABLE messages (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL,
-    username TEXT NOT NULL,
     chat_id UUID REFERENCES chats (id) ON DELETE CASCADE,
+    content_type VARCHAR(10) NOT NULL, -- "text" or "image"
     content TEXT NOT NULL,
-    timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    user_id TEXT NOT NULL,
+    username TEXT NOT NULL,
+    INDEX user_id_index (user_id)
 );

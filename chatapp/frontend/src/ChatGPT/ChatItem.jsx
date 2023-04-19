@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { EditIcon, TrashIcon } from "./Icons"; // Import the icons from a separate file
 import { useAuthenticator } from "@aws-amplify/ui-react";
+import { Auth } from "aws-amplify";
+import { useEffect } from "react";
 
 import { twMerge } from "tailwind-merge";
 
@@ -8,6 +10,17 @@ const ChatItem = ({ chat, selected, onSelect, onUpdate, onDelete }) => {
 	const { user } = useAuthenticator((context) => [context.user]);
 	const [isEditing, setIsEditing] = useState(false);
 	const [name, setName] = useState(chat.name);
+	const [userId, setUserId] = useState("");
+
+	useEffect(() => {
+		let getId = async () => {
+			const credentials = await Auth.currentCredentials();
+			const id = credentials.identityId;
+			setUserId(id);
+		};
+
+		getId();
+	}, []);
 
 	console.log("ChatItem", chat.username);
 
@@ -64,16 +77,23 @@ const ChatItem = ({ chat, selected, onSelect, onUpdate, onDelete }) => {
 
 					{user && (
 						<>
-							<button
-								onClick={toggleEditing}
-								className="px-1 text-gray-600 hover:text-gray-800">
-								<EditIcon />
-							</button>
-							<button
-								onClick={handleDelete}
-								className="px-1 ml-2 text-gray-600 hover:text-gray-800">
-								<TrashIcon />
-							</button>
+							{console.log("ChatItem", chat.user_id)}
+							{console.log("userId", userId)}
+							{console.log("user", user)}
+							{userId === chat.user_id && (
+								<>
+									<button
+										onClick={toggleEditing}
+										className="px-1 text-gray-600 hover:text-gray-800">
+										<EditIcon />
+									</button>
+									<button
+										onClick={handleDelete}
+										className="px-1 ml-2 text-gray-600 hover:text-gray-800">
+										<TrashIcon />
+									</button>
+								</>
+							)}
 						</>
 					)}
 				</div>

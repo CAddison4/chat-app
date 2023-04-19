@@ -11,13 +11,7 @@ export default function Home() {
 
 	const privateRequest = async () => {
 		try {
-			const response = await API.get("api", "/private", {
-				headers: {
-					Authorization: `Bearer ${(await Auth.currentSession())
-						.getAccessToken()
-						.getJwtToken()}`,
-				},
-			});
+			const response = await API.get("api", "/private");
 			alert(JSON.stringify(response));
 		} catch (error) {
 			alert(error);

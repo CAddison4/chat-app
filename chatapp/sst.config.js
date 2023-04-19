@@ -1,5 +1,6 @@
 import { API } from "./stacks/ApiStack";
 import { FrontendStack } from "./stacks/FrontendStack";
+import { MediaAssets } from "./stacks/MediaAssets";
 
 export default {
 	config(_input) {
@@ -9,6 +10,6 @@ export default {
 		};
 	},
 	stacks(app) {
-		app.stack(API).stack(FrontendStack);
+		app.stack(MediaAssets).stack(API).stack(FrontendStack);
 	},
 };
